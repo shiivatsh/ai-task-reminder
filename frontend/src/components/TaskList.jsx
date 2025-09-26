@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 
-const TaskList = ({ onTaskUpdate }) => {
+const TaskList = ({ onTaskUpdate, featureFlags = {} }) => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hoveredTask, setHoveredTask] = useState(null);
@@ -30,8 +30,10 @@ const TaskList = ({ onTaskUpdate }) => {
     
     try {
       await axios.delete(`/api/tasks/${taskId}`);
-      setTasks(prev => prev.filter(task => task.id !== taskId));
-      if (onTaskUpdate) onTaskUpdate(tasks.filter(task => task.id !== taskId));
+      const updatedTasks = tasks.filter(task => task.id !== taskId);
+      setTasks(updatedTasks);
+      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      if (onTaskUpdate) onTaskUpdate(updatedTasks);
     } catch (error) {
       console.error('Error deleting task:', error);
     }
@@ -40,12 +42,12 @@ const TaskList = ({ onTaskUpdate }) => {
   const handleToggleComplete = async (taskId, completed) => {
     try {
       const response = await axios.put(`/api/tasks/${taskId}`, { completed: !completed });
-      setTasks(prev => prev.map(task => 
+      const updatedTasks = tasks.map(task => 
         task.id === taskId ? { ...task, completed: !completed } : task
-      ));
-      if (onTaskUpdate) onTaskUpdate(tasks.map(task => 
-        task.id === taskId ? { ...task, completed: !completed } : task
-      ));
+      );
+      setTasks(updatedTasks);
+      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+      if (onTaskUpdate) onTaskUpdate(updatedTasks);
     } catch (error) {
       console.error('Error updating task:', error);
     }
@@ -71,6 +73,12 @@ const TaskList = ({ onTaskUpdate }) => {
 
   const getPriorityText = (priority) => {
     return priority?.charAt(0).toUpperCase() + priority?.slice(1) || 'Medium';
+  };
+
+  const isCreativeTask = (task) => {
+    const creativeKeywords = ['creative', 'design', 'write', 'story', 'art', 'video', 'content', 'blog', 'script', 'marketing', 'brand'];
+    const text = (task.title + ' ' + task.description + ' ' + task.category).toLowerCase();
+    return creativeKeywords.some(keyword => text.includes(keyword));
   };
 
   const handleMouseEnter = (task, event) => {
@@ -207,6 +215,13 @@ const TaskList = ({ onTaskUpdate }) => {
               {task.reminder && (
                 <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm">
                   🔔 Reminder
+                </span>
+              )}
+
+              {/* Creative Task Badge (Story IP Mode) */}
+              {featureFlags.STORY_IP_MODE && isCreativeTask(task) && (
+                <span className="bg-purple-500 text-white px-2 py-1 rounded text-sm font-medium">
+                  ✨ Creative
                 </span>
               )}
             </div>

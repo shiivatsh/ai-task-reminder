@@ -5,8 +5,8 @@ import AddTaskForm from './components/AddTaskForm';
 import TaskList from './components/TaskList';
 
 const FEATURE_FLAGS = {
-  SUSTAINABILITY_MODE: false,
-  STORY_IP_MODE: false,
+  SUSTAINABILITY_MODE: false, // Shows eco-friendly AI tips banner
+  STORY_IP_MODE: false,       // Adds purple badges for creative tasks
 };
 
 function App() {
@@ -17,6 +17,18 @@ function App() {
     setTasks(updatedTasks);
     localStorage.setItem('tasks', JSON.stringify(updatedTasks));
   };
+
+  // Initialize tasks from localStorage on app start
+  useEffect(() => {
+    const savedTasks = localStorage.getItem('tasks');
+    if (savedTasks) {
+      try {
+        setTasks(JSON.parse(savedTasks));
+      } catch (error) {
+        console.error('Error parsing saved tasks:', error);
+      }
+    }
+  }, []);
 
   // Reminder check interval - runs every 10 seconds
   useEffect(() => {
@@ -105,8 +117,8 @@ function App() {
 
       {/* Sustainability Mode Feature Flag */}
       {FEATURE_FLAGS.SUSTAINABILITY_MODE && (
-        <div className="bg-green-100 p-2 rounded text-center">
-          🌱 AI suggests eco-friendly tips!
+        <div className="bg-green-100 p-2 text-center border-b border-green-200">
+          <p className="text-green-800 font-medium">🌱 AI suggests eco-friendly tips!</p>
         </div>
       )}
 
@@ -119,7 +131,7 @@ function App() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
         <AddTaskForm onAddTask={addTask} />
-        <TaskList onTaskUpdate={handleTaskUpdate} />
+        <TaskList onTaskUpdate={handleTaskUpdate} featureFlags={FEATURE_FLAGS} />
       </div>
 
       {/* Reminder Modal */}
