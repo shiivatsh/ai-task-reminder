@@ -56,10 +56,12 @@ const detectDateFromText = (text) => {
     'december': 11, 'dec': 11
   };
   
-  // Check for month names
+  // Check for month names (must be whole words to avoid false matches)
   for (const [monthName, monthIndex] of Object.entries(months)) {
-    if (textLower.includes(monthName)) {
+    const monthRegex = new RegExp(`\\b${monthName}\\b`, 'i');
+    if (monthRegex.test(textLower)) {
       const date = new Date(currentYear, monthIndex, 1, 9, 0); // 9 AM on 1st of month
+      console.log(`Detected month: ${monthName} -> ${date.toISOString()}`);
       return date.toISOString().slice(0, 16); // Format for datetime-local
     }
   }
