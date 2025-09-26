@@ -131,12 +131,12 @@ const AddTaskForm = ({ onAddTask, onTaskDataChange }) => {
       [name]: type === 'checkbox' ? checked : value
     };
     
-    // Smart date detection when title changes
-    if (name === 'title' && value && !formData.dueDate) {
+    // Smart date detection when title OR description changes
+    if ((name === 'title' || name === 'description') && value && !formData.dueDate) {
       const detectedDate = detectDateFromText(value);
       if (detectedDate) {
         newFormData.dueDate = detectedDate;
-        console.log('AddTaskForm: Auto-detected date from title:', detectedDate);
+        console.log(`AddTaskForm: Auto-detected date from ${name}:`, detectedDate);
       }
     }
     
