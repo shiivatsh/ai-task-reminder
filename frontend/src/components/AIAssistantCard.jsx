@@ -10,8 +10,8 @@ const AIAssistantCard = ({ taskData }) => {
     const getAiAnalysis = async () => {
       console.log('AIAssistantCard: taskData changed', taskData);
       
-      // Only analyze if we have description (due date is optional)
-      if (taskData.description?.trim() && taskData.description.length > 10) {
+      // Only analyze if we have description (5+ characters is enough)
+      if (taskData.description?.trim() && taskData.description.length >= 5) {
         console.log('AIAssistantCard: Starting AI analysis...');
         setIsLoading(true);
         setShowContent(true);
@@ -70,7 +70,7 @@ const AIAssistantCard = ({ taskData }) => {
           <div className="text-center py-12">
             <div className="text-4xl mb-4">🤖</div>
             <p className="text-gray-600" style={{ fontFamily: 'Montserrat' }}>
-              AI Assistant - Start typing to get analysis
+              AI Assistant - Type 5+ characters in description to get analysis
             </p>
           </div>
         ) : isLoading ? (
