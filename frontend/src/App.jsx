@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { format, isBefore, sub } from 'date-fns';
+import { format, isBefore, sub, isAfter, differenceInMinutes } from 'date-fns';
 import AddTaskForm from './components/AddTaskForm';
 import TaskList from './components/TaskList';
 
@@ -11,35 +11,59 @@ const FEATURE_FLAGS = {
 
 function App() {
   const [tasks, setTasks] = useState([]);
-  const [showModal, setShowModal] = useState(null);
+  const [showReminderModal, setShowReminderModal] = useState(null);
 
   const handleTaskUpdate = (updatedTasks) => {
     setTasks(updatedTasks);
     localStorage.setItem('tasks', JSON.stringify(updatedTasks));
   };
 
+  // Reminder check interval - runs every 60 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
+    const checkReminders = () => {
+      const now = new Date();
+      
       tasks.forEach(task => {
-        if (task.reminder && task.dueDate && !task.completed) {
-          const reminderTime = parseReminder(task.reminder, task.dueDate);
-          if (isBefore(new Date(), reminderTime)) {
-            setShowModal(task);
+        if (task.dueDate && !task.completed && !task.reminderShown) {
+          const dueDate = new Date(task.dueDate);
+          const minutesUntilDue = differenceInMinutes(dueDate, now);
+          
+          // Parse reminder time (default to 30 minutes if not specified)
+          let reminderMinutes = 30; // default
+          if (task.reminder) {
+            if (typeof task.reminder === 'string') {
+              if (task.reminder.includes('1 hour')) reminderMinutes = 60;
+              else if (task.reminder.includes('2 hours')) reminderMinutes = 120;
+              else if (task.reminder.includes('3 hours')) reminderMinutes = 180;
+              else if (task.reminder.includes('6 hours')) reminderMinutes = 360;
+              else if (task.reminder.includes('30 minutes')) reminderMinutes = 30;
+              else if (task.reminder.includes('15 minutes')) reminderMinutes = 15;
+            }
+          }
+          
+          // Show reminder if we're within the reminder window
+          if (minutesUntilDue <= reminderMinutes && minutesUntilDue > 0) {
+            setShowReminderModal(task);
+            // Mark as shown to prevent duplicate reminders
+            task.reminderShown = true;
+          }
+          
+          // Also show if task is overdue
+          if (minutesUntilDue <= 0) {
+            setShowReminderModal(task);
+            task.reminderShown = true;
           }
         }
       });
-    }, 60000);
+    };
+
+    // Check immediately
+    checkReminders();
+    
+    // Then check every 60 seconds
+    const interval = setInterval(checkReminders, 60000);
     return () => clearInterval(interval);
   }, [tasks]);
-
-  const parseReminder = (reminder, dueDate) => {
-    const due = new Date(dueDate);
-    if (typeof reminder === 'string' && reminder.includes('hour')) {
-      const hours = parseInt(reminder);
-      return sub(due, { hours });
-    }
-    return due;
-  };
 
   const refreshTasks = async () => {
     try {
@@ -99,19 +123,42 @@ function App() {
       </div>
 
       {/* Reminder Modal */}
-      {showModal && (
+      {showReminderModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-80 md:w-96 mx-4">
-            <h3 className="text-lg font-bold mb-2">🔔 Task Reminder</h3>
-            <p className="mb-2"><strong>Task:</strong> {showModal.title}</p>
-            <p className="mb-2"><strong>Due:</strong> {showModal.dueDate ? format(new Date(showModal.dueDate), 'PPP') : 'No due date'}</p>
-            <p className="mb-4"><strong>AI Analysis:</strong> {showModal.analysis}</p>
-            <div className="flex justify-end space-x-2">
+          <div className="bg-white p-6 rounded w-80 md:w-96 mx-4">
+            <h3 className="text-lg font-bold mb-4 text-center">🔔 Task Reminder</h3>
+            
+            <div className="mb-4">
+              <p className="text-gray-800 font-medium mb-2">
+                <strong>Reminder:</strong> {showReminderModal.title} due soon!
+              </p>
+              
+              {showReminderModal.dueDate && (
+                <p className="text-gray-600 text-sm mb-2">
+                  <strong>Due:</strong> {format(new Date(showReminderModal.dueDate), 'PPP p')}
+                </p>
+              )}
+              
+              {showReminderModal.analysis && (
+                <p className="text-gray-700 text-sm mb-2">
+                  <strong>Analysis:</strong> {showReminderModal.analysis}
+                </p>
+              )}
+              
+              {showReminderModal.priority && (
+                <p className="text-gray-700 text-sm">
+                  <strong>Suggestion:</strong> {showReminderModal.priority} priority
+                  {showReminderModal.reminder && `, ${showReminderModal.reminder}`}
+                </p>
+              )}
+            </div>
+            
+            <div className="flex justify-center">
               <button
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-                onClick={() => setShowModal(null)}
+                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded transition-colors font-medium"
+                onClick={() => setShowReminderModal(null)}
               >
-                Got it!
+                Close
               </button>
             </div>
           </div>
