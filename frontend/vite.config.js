@@ -10,6 +10,10 @@ export default defineConfig({
         target: 'http://localhost:5001',
         changeOrigin: true,
       },
+      '/prioritize': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
     },
   },
 })

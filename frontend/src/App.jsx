@@ -32,6 +32,7 @@ function App() {
   };
 
   const handleTaskDataChange = (taskData) => {
+    console.log('App: Task data changed', taskData);
     setCurrentTaskData(taskData);
   };
 

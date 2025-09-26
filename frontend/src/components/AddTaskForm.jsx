@@ -68,7 +68,9 @@ const AddTaskForm = ({ onAddTask, onTaskDataChange }) => {
     setError('');
     
     // Notify parent about task data changes for AI analysis
+    console.log('AddTaskForm: Data changed', newFormData);
     if (onTaskDataChange) {
+      console.log('AddTaskForm: Calling onTaskDataChange');
       onTaskDataChange(newFormData);
     }
   };

@@ -8,12 +8,16 @@ const AIAssistantCard = ({ taskData }) => {
 
   useEffect(() => {
     const getAiAnalysis = async () => {
-      // Only analyze if we have both description and due date
-      if (taskData.description?.trim() && taskData.dueDate) {
+      console.log('AIAssistantCard: taskData changed', taskData);
+      
+      // Only analyze if we have description (due date is optional)
+      if (taskData.description?.trim() && taskData.description.length > 10) {
+        console.log('AIAssistantCard: Starting AI analysis...');
         setIsLoading(true);
         setShowContent(true);
         
         try {
+          console.log('AIAssistantCard: Making API call to /prioritize');
           const response = await axios.post('/prioritize', {
             title: taskData.title || '',
             description: taskData.description,
@@ -21,9 +25,10 @@ const AIAssistantCard = ({ taskData }) => {
             category: taskData.category || ''
           });
           
+          console.log('AIAssistantCard: AI response received', response.data);
           setAiAnalysis(response.data);
         } catch (error) {
-          console.error('AI analysis error:', error);
+          console.error('AIAssistantCard: AI analysis error:', error);
           setAiAnalysis({
             analysis: "I'm having trouble analyzing this task right now, but it looks important!",
             suggestion: {
@@ -36,6 +41,11 @@ const AIAssistantCard = ({ taskData }) => {
           setIsLoading(false);
         }
       } else {
+        console.log('AIAssistantCard: Not enough data for analysis', { 
+          hasDescription: !!taskData.description?.trim(), 
+          descriptionLength: taskData.description?.length || 0,
+          hasDueDate: !!taskData.dueDate 
+        });
         setShowContent(false);
         setAiAnalysis(null);
       }
