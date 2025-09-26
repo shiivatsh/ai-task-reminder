@@ -113,9 +113,10 @@ const TaskList = ({ tasks, onTaskUpdate, featureFlags = {} }) => {
         {tasks.map((task) => (
           <div
             key={task.id}
-            className={`bg-white p-4 rounded shadow-md hover:scale-105 transition-all duration-300 cursor-pointer relative ${
+            className={`bg-white p-4 rounded border border-gray-200 hover:shadow-sm hover:scale-105 transition-all duration-300 cursor-pointer relative ${
               task.completed ? 'opacity-75' : ''
             }`}
+            style={{ borderWidth: '0.5px' }}
             onMouseEnter={(e) => handleMouseEnter(task, e)}
             onMouseLeave={handleMouseLeave}
             onMouseMove={handleMouseMove}
