@@ -61,21 +61,8 @@ function App() {
 
   const addTask = async (taskData) => {
     try {
-      // First, get AI prioritization
-      const prioritizeRes = await axios.post('/prioritize', taskData);
-      const aiResult = prioritizeRes.data;
-      
-      // Update task data with AI suggestions
-      const enhancedTaskData = {
-        ...taskData,
-        priority: aiResult.suggestion?.priority || taskData.priority,
-        category: aiResult.suggestion?.suggestedCategory || taskData.category,
-        reminder: aiResult.suggestion?.reminder || taskData.reminder,
-        analysis: aiResult.analysis
-      };
-      
-      // Create the task
-      const taskRes = await axios.post('/api/tasks', enhancedTaskData);
+      // Create the task directly (AI analysis already done in form)
+      const taskRes = await axios.post('/api/tasks', taskData);
       const newTask = taskRes.data;
       
       // Update local state
