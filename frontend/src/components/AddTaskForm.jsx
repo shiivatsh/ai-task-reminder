@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const AddTaskForm = ({ onAddTask }) => {
+const AddTaskForm = ({ onAddTask, onTaskDataChange }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -60,11 +60,17 @@ const AddTaskForm = ({ onAddTask }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       [name]: type === 'checkbox' ? checked : value
-    }));
+    };
+    setFormData(newFormData);
     setError('');
+    
+    // Notify parent about task data changes for AI analysis
+    if (onTaskDataChange) {
+      onTaskDataChange(newFormData);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -115,8 +121,8 @@ const AddTaskForm = ({ onAddTask }) => {
   };
 
   return (
-    <div className="flex flex-col gap-4 md:w-1/2 mx-auto p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">Add New Task</h2>
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200" style={{ borderWidth: '0.5px' }}>
+      <h3 className="text-lg font-medium text-black mb-6" style={{ fontFamily: 'Montserrat' }}>Add The Task</h3>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Title */}

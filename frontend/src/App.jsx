@@ -4,6 +4,7 @@ import { format, isBefore, sub, isAfter, differenceInMinutes } from 'date-fns';
 import AddTaskForm from './components/AddTaskForm';
 import TaskList from './components/TaskList';
 import Landing from './components/Landing';
+import AIAssistantCard from './components/AIAssistantCard';
 
 const FEATURE_FLAGS = {
   SUSTAINABILITY_MODE: false, // Shows eco-friendly AI tips banner
@@ -14,6 +15,12 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [showReminderModal, setShowReminderModal] = useState(null);
   const [showLanding, setShowLanding] = useState(true);
+  const [currentTaskData, setCurrentTaskData] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    category: ''
+  });
 
   const handleTaskUpdate = (updatedTasks) => {
     setTasks(updatedTasks);
@@ -22,6 +29,10 @@ function App() {
 
   const handleStartApp = () => {
     setShowLanding(false);
+  };
+
+  const handleTaskDataChange = (taskData) => {
+    setCurrentTaskData(taskData);
   };
 
   // Initialize tasks from localStorage on app start
@@ -117,12 +128,20 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-blue-600 text-white py-4">
-        <div className="container mx-auto px-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">AI Task Reminder</h1>
-          <p className="text-lg font-semibold ml-4">Tasks: {tasks.length}</p>
+    <div className="min-h-screen bg-white">
+      {/* Header with Logo */}
+      <header className="p-8 border-b border-gray-200" style={{ borderWidth: '0.5px' }}>
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          {/* Logo */}
+          <div className="flex items-center space-x-2">
+            <img src="/logo.svg" alt="Ticki Logo" className="w-6 h-6 text-black" />
+            <span className="text-black font-medium text-lg" style={{ fontFamily: 'Montserrat' }}>Ticki</span>
+          </div>
+          
+          {/* Task Counter */}
+          <div className="text-black font-medium" style={{ fontFamily: 'Montserrat' }}>
+            Tasks: {tasks.length}
+          </div>
         </div>
       </header>
 
@@ -133,17 +152,24 @@ function App() {
         </div>
       )}
 
-      {/* Hero Section */}
-      <div className="text-center p-4 bg-blue-50 rounded-lg mx-4 md:mx-auto md:w-1/2 mt-6">
-        <div className="text-4xl mb-2">🔔</div>
-        <p className="text-gray-700">Add a task. Let AI prioritize it. Get smart reminders.</p>
-      </div>
+      {/* Two-Card Layout */}
+      <main className="max-w-7xl mx-auto p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Card - Task Input Form */}
+          <AddTaskForm 
+            onAddTask={addTask} 
+            onTaskDataChange={handleTaskDataChange}
+          />
+          
+          {/* Right Card - AI Assistant */}
+          <AIAssistantCard taskData={currentTaskData} />
+        </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <AddTaskForm onAddTask={addTask} />
-        <TaskList onTaskUpdate={handleTaskUpdate} featureFlags={FEATURE_FLAGS} />
-      </div>
+        {/* Task List Below Cards */}
+        <div className="mt-12">
+          <TaskList onTaskUpdate={handleTaskUpdate} featureFlags={FEATURE_FLAGS} />
+        </div>
+      </main>
 
       {/* Reminder Modal */}
       {showReminderModal && (
