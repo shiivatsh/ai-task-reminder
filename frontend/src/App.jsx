@@ -18,7 +18,7 @@ function App() {
     localStorage.setItem('tasks', JSON.stringify(updatedTasks));
   };
 
-  // Reminder check interval - runs every 60 seconds
+  // Reminder check interval - runs every 10 seconds
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
@@ -60,8 +60,8 @@ function App() {
     // Check immediately
     checkReminders();
     
-    // Then check every 60 seconds
-    const interval = setInterval(checkReminders, 60000);
+    // Then check every 10 seconds
+    const interval = setInterval(checkReminders, 10000);
     return () => clearInterval(interval);
   }, [tasks]);
 
