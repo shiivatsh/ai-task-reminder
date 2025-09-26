@@ -15,15 +15,15 @@ const Landing = ({ onStart }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-8 -mt-16">
-        <div className="text-center max-w-4xl">
+      <main className="flex-1 flex flex-col items-center justify-center px-8">
+        <div className="text-center max-w-4xl flex flex-col items-center justify-center">
           {/* Main Title */}
-          <h1 className="text-4xl md:text-6xl font-light text-black mb-8 tracking-widest" style={{fontFamily: 'Montserrat', fontWeight: 300}}>
+          <h1 className="text-black mb-8 tracking-widest" style={{fontFamily: 'Montserrat', fontWeight: 200, fontSize: '36px'}}>
             AI TASK REMINDER
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl md:text-2xl text-black mb-16 leading-relaxed" style={{fontFamily: 'Montserrat', fontWeight: 400}}>
+          <p className="text-black mb-16 leading-relaxed" style={{fontFamily: 'Montserrat', fontWeight: 400, fontSize: '36px'}}>
             Add A Task. Let AI Prioritize It. Get Smart Reminders.
           </p>
 
