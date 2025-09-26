@@ -357,11 +357,12 @@ const AddTaskForm = ({ onAddTask, onTaskDataChange }) => {
           <p className="text-red-500 text-sm">{error}</p>
         )}
 
-        {/* Submit Button */}
+        {/* Submit Button - Landing Page Style */}
         <button
           type="submit"
           disabled={isSubmitting || !formData.title.trim()}
-          className="bg-blue-500 text-white hover:bg-blue-600 w-full py-2 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full py-3 px-6 border-2 border-black text-black font-medium rounded-full hover:bg-black hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          style={{ fontFamily: 'Montserrat' }}
         >
           {isSubmitting ? (
             <>
