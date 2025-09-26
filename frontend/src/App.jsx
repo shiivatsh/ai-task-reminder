@@ -3,6 +3,7 @@ import axios from 'axios';
 import { format, isBefore, sub, isAfter, differenceInMinutes } from 'date-fns';
 import AddTaskForm from './components/AddTaskForm';
 import TaskList from './components/TaskList';
+import Landing from './components/Landing';
 
 const FEATURE_FLAGS = {
   SUSTAINABILITY_MODE: false, // Shows eco-friendly AI tips banner
@@ -12,10 +13,15 @@ const FEATURE_FLAGS = {
 function App() {
   const [tasks, setTasks] = useState([]);
   const [showReminderModal, setShowReminderModal] = useState(null);
+  const [showLanding, setShowLanding] = useState(true);
 
   const handleTaskUpdate = (updatedTasks) => {
     setTasks(updatedTasks);
     localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+  };
+
+  const handleStartApp = () => {
+    setShowLanding(false);
   };
 
   // Initialize tasks from localStorage on app start
@@ -104,6 +110,11 @@ function App() {
       throw error;
     }
   };
+
+  // Show landing page first
+  if (showLanding) {
+    return <Landing onStart={handleStartApp} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
