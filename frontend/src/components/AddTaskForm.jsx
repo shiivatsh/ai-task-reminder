@@ -1,6 +1,72 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Smart date detection function
+const detectDateFromText = (text) => {
+  if (!text) return '';
+  
+  const textLower = text.toLowerCase();
+  const currentYear = new Date().getFullYear();
+  
+  // Month detection
+  const months = {
+    'january': 0, 'jan': 0,
+    'february': 1, 'feb': 1,
+    'march': 2, 'mar': 2,
+    'april': 3, 'apr': 3,
+    'may': 4,
+    'june': 5, 'jun': 5,
+    'july': 6, 'jul': 6,
+    'august': 7, 'aug': 7,
+    'september': 8, 'sep': 8, 'sept': 8,
+    'october': 9, 'oct': 9,
+    'november': 10, 'nov': 10,
+    'december': 11, 'dec': 11
+  };
+  
+  // Check for month names
+  for (const [monthName, monthIndex] of Object.entries(months)) {
+    if (textLower.includes(monthName)) {
+      const date = new Date(currentYear, monthIndex, 1, 9, 0); // 9 AM on 1st of month
+      return date.toISOString().slice(0, 16); // Format for datetime-local
+    }
+  }
+  
+  // Relative date detection
+  const today = new Date();
+  
+  if (textLower.includes('tomorrow')) {
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    return tomorrow.toISOString().slice(0, 16);
+  }
+  
+  if (textLower.includes('next week')) {
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    nextWeek.setHours(9, 0, 0, 0);
+    return nextWeek.toISOString().slice(0, 16);
+  }
+  
+  if (textLower.includes('today')) {
+    const todayDate = new Date(today);
+    todayDate.setHours(17, 0, 0, 0); // 5 PM today
+    return todayDate.toISOString().slice(0, 16);
+  }
+  
+  // Weekend detection
+  if (textLower.includes('weekend') || textLower.includes('saturday') || textLower.includes('sunday')) {
+    const weekend = new Date(today);
+    const daysUntilSaturday = (6 - today.getDay()) % 7;
+    weekend.setDate(today.getDate() + daysUntilSaturday);
+    weekend.setHours(10, 0, 0, 0);
+    return weekend.toISOString().slice(0, 16);
+  }
+  
+  return '';
+};
+
 const AddTaskForm = ({ onAddTask, onTaskDataChange }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -60,10 +126,20 @@ const AddTaskForm = ({ onAddTask, onTaskDataChange }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const newFormData = {
+    let newFormData = {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     };
+    
+    // Smart date detection when title changes
+    if (name === 'title' && value && !formData.dueDate) {
+      const detectedDate = detectDateFromText(value);
+      if (detectedDate) {
+        newFormData.dueDate = detectedDate;
+        console.log('AddTaskForm: Auto-detected date from title:', detectedDate);
+      }
+    }
+    
     setFormData(newFormData);
     setError('');
     
