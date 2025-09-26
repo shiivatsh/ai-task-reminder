@@ -2,28 +2,10 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 
-const TaskList = ({ onTaskUpdate, featureFlags = {} }) => {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+const TaskList = ({ tasks, onTaskUpdate, featureFlags = {} }) => {
+  const [loading, setLoading] = useState(false);
   const [hoveredTask, setHoveredTask] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-
-  // Fetch tasks
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = async () => {
-    try {
-      const response = await axios.get('/api/tasks');
-      setTasks(response.data);
-      if (onTaskUpdate) onTaskUpdate(response.data);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
@@ -31,8 +13,6 @@ const TaskList = ({ onTaskUpdate, featureFlags = {} }) => {
     try {
       await axios.delete(`/api/tasks/${taskId}`);
       const updatedTasks = tasks.filter(task => task.id !== taskId);
-      setTasks(updatedTasks);
-      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
       if (onTaskUpdate) onTaskUpdate(updatedTasks);
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -45,8 +25,6 @@ const TaskList = ({ onTaskUpdate, featureFlags = {} }) => {
       const updatedTasks = tasks.map(task => 
         task.id === taskId ? { ...task, completed: !completed } : task
       );
-      setTasks(updatedTasks);
-      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
       if (onTaskUpdate) onTaskUpdate(updatedTasks);
     } catch (error) {
       console.error('Error updating task:', error);

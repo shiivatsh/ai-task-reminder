@@ -36,16 +36,29 @@ function App() {
     setCurrentTaskData(taskData);
   };
 
-  // Initialize tasks from localStorage on app start
+  // Initialize tasks from API and localStorage on app start
   useEffect(() => {
-    const savedTasks = localStorage.getItem('tasks');
-    if (savedTasks) {
+    const initializeTasks = async () => {
       try {
-        setTasks(JSON.parse(savedTasks));
+        // Try to fetch from API first
+        const response = await axios.get('/api/tasks');
+        setTasks(response.data);
+        localStorage.setItem('tasks', JSON.stringify(response.data));
       } catch (error) {
-        console.error('Error parsing saved tasks:', error);
+        console.error('Error fetching tasks from API:', error);
+        // Fallback to localStorage
+        const savedTasks = localStorage.getItem('tasks');
+        if (savedTasks) {
+          try {
+            setTasks(JSON.parse(savedTasks));
+          } catch (parseError) {
+            console.error('Error parsing saved tasks:', parseError);
+          }
+        }
       }
-    }
+    };
+    
+    initializeTasks();
   }, []);
 
   // Reminder check interval - runs every 10 seconds
@@ -168,7 +181,7 @@ function App() {
 
         {/* Task List Below Cards */}
         <div className="mt-12">
-          <TaskList onTaskUpdate={handleTaskUpdate} featureFlags={FEATURE_FLAGS} />
+          <TaskList tasks={tasks} onTaskUpdate={handleTaskUpdate} featureFlags={FEATURE_FLAGS} />
         </div>
       </main>
 
