@@ -59,6 +59,36 @@ function App() {
     }
   };
 
+  const addTask = async (taskData) => {
+    try {
+      // First, get AI prioritization
+      const prioritizeRes = await axios.post('/prioritize', taskData);
+      const aiResult = prioritizeRes.data;
+      
+      // Update task data with AI suggestions
+      const enhancedTaskData = {
+        ...taskData,
+        priority: aiResult.suggestion?.priority || taskData.priority,
+        category: aiResult.suggestion?.suggestedCategory || taskData.category,
+        reminder: aiResult.suggestion?.reminder || taskData.reminder,
+        analysis: aiResult.analysis
+      };
+      
+      // Create the task
+      const taskRes = await axios.post('/api/tasks', enhancedTaskData);
+      const newTask = taskRes.data;
+      
+      // Update local state
+      setTasks(prev => [...prev, newTask]);
+      localStorage.setItem('tasks', JSON.stringify([...tasks, newTask]));
+      
+      return newTask;
+    } catch (error) {
+      console.error('Error adding task:', error);
+      throw error;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -84,8 +114,22 @@ function App() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
-        <AddTaskForm onAdd={refreshTasks} />
-        <TaskList tasks={tasks} onEdit={refreshTasks} />
+        <AddTaskForm onAddTask={addTask} />
+        <TaskList tasks={tasks} onUpdateTask={async (taskId, updates) => {
+          try {
+            await axios.put(`/api/tasks/${taskId}`, updates);
+            refreshTasks();
+          } catch (error) {
+            console.error('Error updating task:', error);
+          }
+        }} onDeleteTask={async (taskId) => {
+          try {
+            await axios.delete(`/api/tasks/${taskId}`);
+            refreshTasks();
+          } catch (error) {
+            console.error('Error deleting task:', error);
+          }
+        }} />
       </div>
 
       {/* Reminder Modal */}

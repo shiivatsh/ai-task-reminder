@@ -44,59 +44,76 @@ async function getAIAnalysis(title, description, dueDate, category) {
   }
 }
 
-// New OpenAI prioritize endpoint as requested
-app.post('/api/prioritize', async (req, res) => {
+// OpenAI prioritize endpoint - updated to exact specification
+app.post('/prioritize', async (req, res) => {
+  const { title, description, dueDate, category } = req.body;
+  
   try {
-    const { title, description, dueDate, category } = req.body;
-    
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{
         role: "user",
-        content: `Analyze this task for urgency and importance. Task: "${title}" - Description: "${description}" - Due: ${dueDate} - Category: ${category}. 
-        Return JSON only: {
-          analysis: "2-3 sentence explanation in Persian/English",
-          suggestion: {
-            priority: "low/medium/high", 
-            reminder: "e.g., 1 hour before",
-            confidence: 0.85
+        content: `Analyze this task for urgency and importance. 
+        Title: ${title}, Description: ${description}, Due: ${dueDate}, Category: ${category || 'none'}.
+        Detect urgency (due date < 24h, keywords 'urgent','must','asap','deadline') 
+        and importance ('critical','client','important').
+        If category empty, suggest one ('client'/'meeting'→work; 'family'/'home'→personal; 'shopping'/'buy'→shopping).
+        Return JSON only: { 
+          analysis: '2-3 sentences explaining priority',
+          suggestion: { 
+            priority: 'low/medium/high', 
+            reminder: 'e.g., 2 hours before', 
+            suggestedCategory: 'string' 
           }
         }`
       }],
       response_format: { type: "json_object" },
-      max_tokens: 200
+      max_tokens: 250
     });
 
     const result = JSON.parse(completion.choices[0].message.content);
     res.json(result);
     
   } catch (error) {
-    console.log('OpenAI failed, using simulation:', error.message);
+    console.log('OpenAI error, using fallback:', error.message);
     
-    // Fallback به شبیه‌سازی هوشمند
-    const simulateAI = (title, description, dueDate) => {
-      const text = (title + ' ' + description).toLowerCase();
-      const hoursLeft = (new Date(dueDate) - new Date()) / (1000 * 60 * 60);
-      
-      let priority = 'medium';
-      let reminder = '3 hours before';
-      
-      if (hoursLeft < 24 || text.includes('urgent') || text.includes('فوری')) {
-        priority = 'high';
-        reminder = '1 hour before';
-      } else if (hoursLeft > 72 && !text.includes('important')) {
-        priority = 'low';
-        reminder = '6 hours before';
+    // Fallback logic
+    const now = new Date();
+    const due = new Date(dueDate);
+    const hoursDiff = (due - now) / (1000 * 60 * 60);
+    const text = (title + ' ' + description).toLowerCase();
+    
+    let priority = 'low';
+    let analysis = 'Default analysis: Medium priority';
+    let suggestedCategory = category;
+    
+    if (hoursDiff < 24 || /urgent|must|asap|deadline/i.test(text)) {
+      priority = 'high';
+      analysis = 'Analysis: High urgency due to close deadline or urgent keywords';
+    } else if (hoursDiff < 72) {
+      priority = 'medium';
+      analysis = 'Analysis: Moderate urgency with medium time remaining';
+    }
+    
+    if (!category) {
+      if (/client|meeting|work/i.test(text)) suggestedCategory = 'work';
+      else if (/family|home/i.test(text)) suggestedCategory = 'personal';
+      else if (/shopping|buy/i.test(text)) suggestedCategory = 'shopping';
+      else suggestedCategory = 'other';
+    }
+    
+    res.json({
+      analysis,
+      suggestion: { 
+        priority, 
+        reminder: priority === 'high' ? '1 hour before' : '3 hours before', 
+        suggestedCategory 
       }
-      
-      return {
-        analysis: `تحلیل: این تسک ${priority} اولویت دارد. زمان باقی‌مانده: ${Math.round(hoursLeft)} ساعت.`,
-        suggestion: { priority, reminder, confidence: 0.9 }
-      };
-    };
-    
-    const simulated = simulateAI(req.body.title, req.body.description, req.body.dueDate);
-    res.json(simulated);
+    });
   }
 });
 
