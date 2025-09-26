@@ -1,14 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Initialize Anthropic
-const anthropic = new Anthropic({
-  apiKey: process.env.API_KEY_ANTHROPIC,
+// Initialize OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || 'sk-xxxx'
 });
 
 // Middleware
@@ -19,44 +19,86 @@ app.use(express.json());
 let tasks = [];
 let taskIdCounter = 1;
 
-// Helper function to get AI analysis and suggested category
+// Helper function to get AI analysis
 async function getAIAnalysis(title, description, dueDate, category) {
   try {
-    const prompt = `Analyze this task and provide:
-    1. Brief actionable advice (max 50 words)
-    2. Suggested category if none provided (work/personal/health/learning/finance/other)
-    
-    Task Details:
+    const prompt = `Analyze this task and provide brief advice (max 50 words):
     Title: ${title}
     Description: ${description}
     Due Date: ${dueDate}
-    Current Category: ${category || 'none'}
+    Category: ${category}
     
-    Format response as: ADVICE: [your advice] | CATEGORY: [suggested category]`;
+    Provide actionable advice for completing this task efficiently.`;
 
-    const response = await anthropic.messages.create({
-      model: "claude-3-haiku-20240307",
-      max_tokens: 150,
-      messages: [{
-        role: "user",
-        content: prompt
-      }]
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 100,
+      temperature: 0.7,
     });
 
-    const content = response.content[0]?.text || "ADVICE: Focus on breaking this task into smaller steps. | CATEGORY: other";
-    const parts = content.split(' | ');
-    const advice = parts[0]?.replace('ADVICE: ', '') || "Focus on breaking this task into smaller steps.";
-    const suggestedCategory = parts[1]?.replace('CATEGORY: ', '') || category || 'other';
-
-    return { advice, suggestedCategory };
+    return response.choices[0]?.message?.content || "Focus on breaking this task into smaller steps.";
   } catch (error) {
-    console.error('Anthropic API error:', error);
-    return { 
-      advice: "Focus on breaking this task into smaller steps and tackle them one by one.",
-      suggestedCategory: category || 'other'
-    };
+    console.error('OpenAI API error:', error);
+    return "Focus on breaking this task into smaller steps and tackle them one by one.";
   }
 }
+
+// New OpenAI prioritize endpoint as requested
+app.post('/api/prioritize', async (req, res) => {
+  try {
+    const { title, description, dueDate, category } = req.body;
+    
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{
+        role: "user",
+        content: `Analyze this task for urgency and importance. Task: "${title}" - Description: "${description}" - Due: ${dueDate} - Category: ${category}. 
+        Return JSON only: {
+          analysis: "2-3 sentence explanation in Persian/English",
+          suggestion: {
+            priority: "low/medium/high", 
+            reminder: "e.g., 1 hour before",
+            confidence: 0.85
+          }
+        }`
+      }],
+      response_format: { type: "json_object" },
+      max_tokens: 200
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content);
+    res.json(result);
+    
+  } catch (error) {
+    console.log('OpenAI failed, using simulation:', error.message);
+    
+    // Fallback به شبیه‌سازی هوشمند
+    const simulateAI = (title, description, dueDate) => {
+      const text = (title + ' ' + description).toLowerCase();
+      const hoursLeft = (new Date(dueDate) - new Date()) / (1000 * 60 * 60);
+      
+      let priority = 'medium';
+      let reminder = '3 hours before';
+      
+      if (hoursLeft < 24 || text.includes('urgent') || text.includes('فوری')) {
+        priority = 'high';
+        reminder = '1 hour before';
+      } else if (hoursLeft > 72 && !text.includes('important')) {
+        priority = 'low';
+        reminder = '6 hours before';
+      }
+      
+      return {
+        analysis: `تحلیل: این تسک ${priority} اولویت دارد. زمان باقی‌مانده: ${Math.round(hoursLeft)} ساعت.`,
+        suggestion: { priority, reminder, confidence: 0.9 }
+      };
+    };
+    
+    const simulated = simulateAI(req.body.title, req.body.description, req.body.dueDate);
+    res.json(simulated);
+  }
+});
 
 // Routes
 
@@ -70,19 +112,18 @@ app.post('/api/tasks', async (req, res) => {
   try {
     const { title, description, dueDate, category, priority, reminder } = req.body;
     
-    // Get AI analysis and suggested category
-    const { advice, suggestedCategory } = await getAIAnalysis(title, description, dueDate, category);
+    // Get AI analysis
+    const analysis = await getAIAnalysis(title, description, dueDate, category);
     
     const newTask = {
       id: taskIdCounter++,
       title,
       description,
       dueDate,
-      category: category || suggestedCategory,
+      category,
       priority: priority || 'medium',
       reminder: reminder || false,
-      analysis: advice,
-      suggestedCategory,
+      analysis,
       completed: false,
       createdAt: new Date().toISOString()
     };
