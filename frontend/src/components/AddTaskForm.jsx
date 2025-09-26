@@ -6,9 +6,41 @@ const detectDateFromText = (text) => {
   if (!text) return '';
   
   const textLower = text.toLowerCase();
+  const today = new Date();
   const currentYear = new Date().getFullYear();
   
-  // Month detection
+  // Relative date detection (higher priority than months)
+  if (textLower.includes('tomorrow')) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    console.log('Detected tomorrow:', tomorrow.toISOString());
+    return tomorrow.toISOString().slice(0, 16);
+  }
+  
+  if (textLower.includes('today')) {
+    const todayDate = new Date();
+    todayDate.setHours(17, 0, 0, 0); // 5 PM today
+    return todayDate.toISOString().slice(0, 16);
+  }
+  
+  if (textLower.includes('next week')) {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(9, 0, 0, 0);
+    return nextWeek.toISOString().slice(0, 16);
+  }
+  
+  // Weekend detection
+  if (textLower.includes('weekend') || textLower.includes('saturday') || textLower.includes('sunday')) {
+    const weekend = new Date();
+    const daysUntilSaturday = (6 - weekend.getDay()) % 7;
+    weekend.setDate(weekend.getDate() + daysUntilSaturday);
+    weekend.setHours(10, 0, 0, 0);
+    return weekend.toISOString().slice(0, 16);
+  }
+  
+  // Month detection (lower priority)
   const months = {
     'january': 0, 'jan': 0,
     'february': 1, 'feb': 1,
@@ -30,38 +62,6 @@ const detectDateFromText = (text) => {
       const date = new Date(currentYear, monthIndex, 1, 9, 0); // 9 AM on 1st of month
       return date.toISOString().slice(0, 16); // Format for datetime-local
     }
-  }
-  
-  // Relative date detection
-  const today = new Date();
-  
-  if (textLower.includes('tomorrow')) {
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    return tomorrow.toISOString().slice(0, 16);
-  }
-  
-  if (textLower.includes('next week')) {
-    const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 7);
-    nextWeek.setHours(9, 0, 0, 0);
-    return nextWeek.toISOString().slice(0, 16);
-  }
-  
-  if (textLower.includes('today')) {
-    const todayDate = new Date(today);
-    todayDate.setHours(17, 0, 0, 0); // 5 PM today
-    return todayDate.toISOString().slice(0, 16);
-  }
-  
-  // Weekend detection
-  if (textLower.includes('weekend') || textLower.includes('saturday') || textLower.includes('sunday')) {
-    const weekend = new Date(today);
-    const daysUntilSaturday = (6 - today.getDay()) % 7;
-    weekend.setDate(today.getDate() + daysUntilSaturday);
-    weekend.setHours(10, 0, 0, 0);
-    return weekend.toISOString().slice(0, 16);
   }
   
   return '';
