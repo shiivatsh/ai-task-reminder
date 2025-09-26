@@ -13,18 +13,10 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [showModal, setShowModal] = useState(null);
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const res = await axios.get('/api/tasks');
-        setTasks(res.data);
-        localStorage.setItem('tasks', JSON.stringify(res.data));
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-      }
-    };
-    fetchTasks();
-  }, []);
+  const handleTaskUpdate = (updatedTasks) => {
+    setTasks(updatedTasks);
+    localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -66,8 +58,9 @@ function App() {
       const newTask = taskRes.data;
       
       // Update local state
-      setTasks(prev => [...prev, newTask]);
-      localStorage.setItem('tasks', JSON.stringify([...tasks, newTask]));
+      const updatedTasks = [...tasks, newTask];
+      setTasks(updatedTasks);
+      localStorage.setItem('tasks', JSON.stringify(updatedTasks));
       
       return newTask;
     } catch (error) {
@@ -102,21 +95,7 @@ function App() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
         <AddTaskForm onAddTask={addTask} />
-        <TaskList tasks={tasks} onUpdateTask={async (taskId, updates) => {
-          try {
-            await axios.put(`/api/tasks/${taskId}`, updates);
-            refreshTasks();
-          } catch (error) {
-            console.error('Error updating task:', error);
-          }
-        }} onDeleteTask={async (taskId) => {
-          try {
-            await axios.delete(`/api/tasks/${taskId}`);
-            refreshTasks();
-          } catch (error) {
-            console.error('Error deleting task:', error);
-          }
-        }} />
+        <TaskList onTaskUpdate={handleTaskUpdate} />
       </div>
 
       {/* Reminder Modal */}
