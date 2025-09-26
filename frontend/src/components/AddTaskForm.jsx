@@ -134,7 +134,7 @@ const AddTaskForm = ({ onAddTask, onTaskDataChange }) => {
     };
     
     // Smart date detection when title OR description changes
-    if ((name === 'title' || name === 'description') && value && !formData.dueDate) {
+    if ((name === 'title' || name === 'description') && value) {
       const detectedDate = detectDateFromText(value);
       if (detectedDate) {
         newFormData.dueDate = detectedDate;
